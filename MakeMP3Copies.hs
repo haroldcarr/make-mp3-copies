@@ -49,10 +49,10 @@ maybeDo f extP sizeP fp = do
         else      f       fp cp
 
 doIf f sizeP fp cp = do
-    fpSize <- liftIO . getFileSize         $ fpToString fp
-    fpTime <- liftIO . getModificationTime $ fpToString fp
-    cpSize <- liftIO . getFileSize         $ fpToString cp
-    cpTime <- liftIO . getModificationTime $ fpToString cp
+    fpSize <- lio getFileSize         fp
+    fpTime <- lio getModificationTime fp
+    cpSize <- lio getFileSize         cp
+    cpTime <- lio getModificationTime cp
     if fpTime > cpTime || (sizeP && (fromJust fpSize) /= (fromJust cpSize))
         then f fp cp
         else say "FILE EXISTS" cp
@@ -82,5 +82,8 @@ getFileSize path = handle handler $
   where
     handler :: SomeException -> IO (Maybe Integer)
     handler _ = return Nothing
+
+lio f fp =
+    liftIO . f $ fpToString fp
 
 -- End of file.

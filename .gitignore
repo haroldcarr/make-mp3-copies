@@ -1,0 +1,13 @@
+dist
+cabal-dev
+*.o
+*.hi
+*.chi
+*.chs.h
+.virthualenv
+
+# CUSTOM:
+
+.DS_Store
+.DS_Store?
+MakeMP3Copies

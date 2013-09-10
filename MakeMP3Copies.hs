@@ -21,7 +21,6 @@ copyRoot = "/tmp/JUNK/"
 main = shelly $ verbosely $ do
     processDir startingPath
 
-processDir :: Shelly.FilePath -> Sh ()
 processDir path = do
     contents <- ls path
     forM_ contents $ \fp -> do
@@ -30,7 +29,6 @@ processDir path = do
                 then do { maybeCreateDir fp; processDir fp}
                 else processFile fp $ takeExtension $ fpToString fp
 
-maybeCreateDir :: Shelly.FilePath -> Sh ()
 maybeCreateDir fp = do
     let cp = mkCpFilePath fp
     dirExists <- test_d cp
@@ -38,28 +36,18 @@ maybeCreateDir fp = do
         then                  say "DIR EXISTS"  cp
         else do { mkdir_p cp; say "DIR CREATED" cp }
 
-processFile :: Shelly.FilePath -> String -> Sh ()
-processFile fp ".flac" = maybeConvert  fp
-processFile fp ".mp3"  = maybeCopy     fp
-processFile fp ".jpg"  = maybeCopy     fp
+processFile fp ".flac" = maybeDo convert True  False fp
+processFile fp ".mp3"  = maybeDo copy    False True  fp
+processFile fp ".jpg"  = maybeDo copy    False True  fp
 processFile fp _       = say "IGNORED" fp
 
-maybeConvert fp = do
-    let cp = mkCpFilePath (fromText (T.pack (replaceExtension (fpToString fp) ".mp3")))
+maybeDo f extP sizeP fp = do
+    let cp = mkCpFilePath $ if extP then (fromText (T.pack (replaceExtension (fpToString fp) ".mp3"))) else fp
     fileExists <- test_f cp
     if fileExists
-        then doIf convert False fp cp
-        else      convert       fp cp
+        then doIf f sizeP fp cp
+        else      f       fp cp
 
-maybeCopy fp = do
-    let cp = mkCpFilePath fp
-    fileExists <- test_f cp
-    if fileExists
-        then doIf copy True fp cp
-        else      copy      fp cp
-
-doIf :: (Shelly.FilePath -> Shelly.FilePath -> Sh ())
-        -> Bool -> Shelly.FilePath -> Shelly.FilePath -> Sh ()
 doIf f sizeP fp cp = do
     fpSize <- liftIO . getFileSize         $ fpToString fp
     fpTime <- liftIO . getModificationTime $ fpToString fp
@@ -79,17 +67,14 @@ copy fp copyFile = do
     cp fp copyFile
     say "FILE COPIED" copyFile
 
-mkCpFilePath :: Shelly.FilePath -> Shelly.FilePath
 mkCpFilePath path =
     (fpToString copyRoot) Shelly.</> (fpToString path)
 
-fpToString :: Shelly.FilePath -> String
 fpToString fp = T.unpack $ toTextIgnore fp
 
 say msg fp =
     liftIO $ putStrLn $ show (fpToString fp) ++ " " ++ msg
 
-getFileSize :: System.FilePath.FilePath -> IO (Maybe Integer)
 getFileSize path = handle handler $
     bracket (openFile path ReadMode) (hClose) (\h -> do
         size <- hFileSize h

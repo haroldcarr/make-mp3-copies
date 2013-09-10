@@ -7,7 +7,7 @@
 #+INFOJS_OPT:  view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 
 # Created       : 2013 Sep 09 (Mon) 17:41:15 by carr.
-Last Modified : 2013 Sep 10 (Tue) 15:54:34 by carr.
+Last Modified : 2013 Sep 10 (Tue) 16:17:16 by carr.
 
 ------------------------------------------------------------------------------
 * Shelly
@@ -55,14 +55,11 @@ import           System.FilePath
 import           System.IO (IOMode(..), hClose, hFileSize, openFile)
 default (T.Text)
 
-
 startingPath = "."
 copyRoot = "/tmp/JUNK/"
 
-
 main = shelly $ verbosely $ do
     processDir startingPath
-
 
 processDir :: Shelly.FilePath -> Sh ()
 processDir path = do
@@ -73,7 +70,6 @@ processDir path = do
                 then do { maybeCreateDir fp; processDir fp}
                 else processFile fp $ takeExtension $ fpToString fp
 
-
 maybeCreateDir :: Shelly.FilePath -> Sh ()
 maybeCreateDir fp = do
     let cp = mkCpFilePath fp
@@ -82,64 +78,46 @@ maybeCreateDir fp = do
         then                  say "DIR EXISTS"  cp
         else do { mkdir_p cp; say "DIR CREATED" cp }
 
-
 processFile :: Shelly.FilePath -> String -> Sh ()
 processFile fp ".flac" = maybeConvert  fp
 processFile fp ".mp3"  = maybeCopy     fp
 processFile fp ".jpg"  = maybeCopy     fp
 processFile fp _       = say "IGNORED" fp
 
-
 maybeConvert fp = do
     let cp = mkCpFilePath (fromText (T.pack (replaceExtension (fpToString fp) ".mp3")))
     fileExists <- test_f cp
     if fileExists
-        then convertIf fp cp
-        else convert   fp cp
+        then doIf convert False fp cp
+        else      convert       fp cp
 
+maybeCopy fp = do
+    let cp = mkCpFilePath fp
+    fileExists <- test_f cp
+    if fileExists
+        then doIf copy True fp cp
+        else      copy      fp cp
 
-convertIf :: Shelly.FilePath -> Shelly.FilePath -> Sh ()
-convertIf fp cp = do
+doIf :: (Shelly.FilePath -> Shelly.FilePath -> Sh ())
+        -> Bool -> Shelly.FilePath -> Shelly.FilePath -> Sh ()
+doIf f sizeP fp cp = do
     fpSize <- liftIO . getFileSize         $ fpToString fp
     fpTime <- liftIO . getModificationTime $ fpToString fp
     cpSize <- liftIO . getFileSize         $ fpToString cp
     cpTime <- liftIO . getModificationTime $ fpToString cp
-    if fpTime > cpTime || (fromJust fpSize) /= (fromJust cpSize)
-        then convert fp cp
+    if fpTime > cpTime || (sizeP && (fromJust fpSize) /= (fromJust cpSize))
+        then f fp cp
         else say "FILE EXISTS" cp
-
 
 convert fp copy = do
     flacToMp3 (toTextIgnore fp) (toTextIgnore copy)
     say "FILE CONVERTED" copy
   where
     flacToMp3 from to = run_ "ffmpeg" ["-i", from, "-qscale:a", "0", to]
-    -- flacToMp3 from to = liftIO $ putStrLn $ "ffmpeg" ++ (show ["-i", "-n", from, "-qscale:a", "0", to])
-
-
-maybeCopy fp = do
-    let cp = mkCpFilePath fp
-    fileExists <- test_f cp
-    if fileExists
-        then copyIf fp cp
-        else copy   fp cp
-
-
-copyIf :: Shelly.FilePath -> Shelly.FilePath -> Sh ()
-copyIf fp cp = do
-    fpSize <- liftIO . getFileSize         $ fpToString fp
-    fpTime <- liftIO . getModificationTime $ fpToString fp
-    cpSize <- liftIO . getFileSize         $ fpToString cp
-    cpTime <- liftIO . getModificationTime $ fpToString cp
-    if fpTime > cpTime || (fromJust fpSize) /= (fromJust cpSize)
-        then copy fp cp
-        else say "FILE EXISTS" cp
-
 
 copy fp copyFile = do
     cp fp copyFile
     say "FILE COPIED" copyFile
-
 
 mkCpFilePath :: Shelly.FilePath -> Shelly.FilePath
 mkCpFilePath path =
@@ -148,10 +126,8 @@ mkCpFilePath path =
 fpToString :: Shelly.FilePath -> String
 fpToString fp = T.unpack $ toTextIgnore fp
 
-
 say msg fp =
     liftIO $ putStrLn $ show (fpToString fp) ++ " " ++ msg
-
 
 getFileSize :: System.FilePath.FilePath -> IO (Maybe Integer)
 getFileSize path = handle handler $
@@ -161,6 +137,8 @@ getFileSize path = handle handler $
   where
     handler :: SomeException -> IO (Maybe Integer)
     handler _ = return Nothing
+
+-- End of file.
 #+END_SRC
 
 #+BEGIN_EXAMPLE

@@ -1,13 +1,41 @@
-#+TITLE:       Make MP3 copies of FLAC, etc.
+#+TITLE:       FLAC to MP3 via Haskell, Shelly and ffmpeg
 #+AUTHOR:      Harold Carr
-#+DESCRIPTION: Make MP3 copies of FLAC, etc.
+#+DESCRIPTION: FLAC to MP3 via Haskell, Shelly and ffmpeg
 #+PROPERTY:    tangle MakeMP3Copies.hs
 #+OPTIONS:     num:nil toc:t
 #+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
 #+INFOJS_OPT:  view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 
 # Created       : 2013 Sep 09 (Mon) 17:41:15 by carr.
-Last Modified : 2013 Sep 10 (Tue) 16:40:44 by carr.
+Last Modified : 2013 Sep 11 (Wed) 11:24:44 by carr.
+
+#+BEGIN_HTML
+---
+title: FLAC to MP3 via Haskell, Shelly and ffmpeg
+tags: haskell, shelly, flac, mp3, ffmpeg
+---
+#+END_HTML
+
+------------------------------------------------------------------------------
+* overview
+
+I have a large digitized music collection, primarily encoded in
+lossless [[http://en.wikipedia.org/wiki/FLAC][FLAC]].  Great for listening at home.  But lossy [[http://en.wikipedia.org/wiki/MP3][MP3]] is best
+for mobile devices, in terms of size and the ability of players to
+handle encoding formats.
+
+So I wrote a script to make parallel MP3 tree of my canonical music
+collection (which also includes FLAC, [[http://en.wikipedia.org/wiki/WAV][WAV]], [[http://en.wikipedia.org/wiki/Audio_Interchange_File_Format][AIFF]], MP3, ...).
+
+I wrote it in [[http://www.haskell.org/][Haskell]], with the help of the [[https://github.com/yesodweb/Shelly.hs][Shelly]] shell scripting DSL and =ffmpeg=.
+
+#+BEGIN_HTML
+<!-- MORE -->
+#+END_HTML
+
+I am not an experienced Haskell/Shelly programmer.  If you have
+suggestions for improvements please let me know (including useful
+=ffmpeg= settings).
 
 ------------------------------------------------------------------------------
 * Shelly
@@ -37,8 +65,12 @@ sudo port install ffmpeg @1.2.2
 ffmpeg -i "/Volumes/my-music/Ahmad Jamal/The Awakening/01-The Awakening.flac" -qscale:a 0 "/tmp/JUNK.mp3"
 #+END_EXAMPLE
 
+------------------------------------------------------------------------------
+* the code
 
-#+BEGIN_SRC haskell
+[[https://github.com/haroldcarr/make-mp3-copies]]
+
+#+BEGIN_SRC haskell -n
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
@@ -55,66 +87,70 @@ import           System.FilePath
 import           System.IO (IOMode(..), hClose, hFileSize, openFile)
 default (T.Text)
 
-startingPath = "."
-copyRoot = "/tmp/JUNK/"
+fromRoot = "."
+toRoot   = "/tmp/JUNK/"
 
 main = shelly $ verbosely $ do
-    processDir startingPath
+    processDir fromRoot
 
-processDir path = do
-    contents <- ls path
-    forM_ contents $ \fp -> do
-            isDir <- test_d fp
+processDir fromPath = do
+    contents <- ls fromPath
+    forM_ contents $ \from -> do
+            isDir <- test_d from
             if isDir
-                then do { maybeCreateDir fp; processDir fp}
-                else processFile fp $ takeExtension $ fpToString fp
+                then do { maybeCreateDir from; processDir from}
+                else processFile from $ takeExtension $ fpToString from
 
-maybeCreateDir fp = do
-    let cp = mkCpFilePath fp
-    dirExists <- test_d cp
+maybeCreateDir from = do
+    let to = mkToFilePath from
+    dirExists <- test_d to
     if dirExists
-        then                  say "DIR EXISTS"  cp
-        else do { mkdir_p cp; say "DIR CREATED" cp }
+        then                  say "DIR EXISTS"  to
+        else do { mkdir_p to; say "DIR CREATED" to }
 
-processFile fp ".flac" = maybeDo convert True  False fp
-processFile fp ".mp3"  = maybeDo copy    False True  fp
-processFile fp ".jpg"  = maybeDo copy    False True  fp
-processFile fp _       = say "IGNORED" fp
+processFile from ".flac" = maybeDo convert True  False from
+processFile from ".mp3"  = maybeDo copy    False True  from
+processFile from ".jpg"  = maybeDo copy    False True  from
+processFile from _       = say "IGNORED" from
 
-maybeDo f extP sizeP fp = do
-    let cp = mkCpFilePath $ if extP then (fromText (T.pack (replaceExtension (fpToString fp) ".mp3"))) else fp
-    fileExists <- test_f cp
+maybeDo f extP sizeP from = do
+    let to = mkToFilePath $ if extP then (fromText (T.pack (replaceExtension (fpToString from) ".mp3"))) else from
+    fileExists <- test_f to
     if fileExists
-        then doIf f sizeP fp cp
-        else      f       fp cp
+        then doIf f sizeP from to
+        else      f       from to
 
-doIf f sizeP fp cp = do
-    fpSize <- lio getFileSize         fp
-    fpTime <- lio getModificationTime fp
-    cpSize <- lio getFileSize         cp
-    cpTime <- lio getModificationTime cp
-    if fpTime > cpTime || (sizeP && (fromJust fpSize) /= (fromJust cpSize))
-        then f fp cp
-        else say "FILE EXISTS" cp
+doIf f sizeP from to = do
+    fromSize <- lio getFileSize         from
+    fromTime <- lio getModificationTime from
+    toSize   <- lio getFileSize         to
+    toTime   <- lio getModificationTime to
+    if fromTime > toTime || (sizeP && (fromJust fromSize) /= (fromJust toSize))
+        then f from to
+        else say "FILE EXISTS" to
 
-convert fp copy = do
-    flacToMp3 (toTextIgnore fp) (toTextIgnore copy)
-    say "FILE CONVERTED" copy
+convert from to = do
+    flacToMp3 (toTextIgnore from) (toTextIgnore to)
+    say "FILE CONVERTED" to
   where
     flacToMp3 from to = run_ "ffmpeg" ["-i", from, "-qscale:a", "0", to]
 
-copy fp copyFile = do
-    cp fp copyFile
-    say "FILE COPIED" copyFile
+copy from to = do
+    cp from to
+    say "FILE COPIED" to
 
-mkCpFilePath path =
-    (fpToString copyRoot) Shelly.</> (fpToString path)
+mkToFilePath path =
+    (fpToString toRoot) Shelly.</> (fpToString path)
 
 fpToString fp = T.unpack $ toTextIgnore fp
 
 say msg fp =
     liftIO $ putStrLn $ show (fpToString fp) ++ " " ++ msg
 
+lio f fp =
+    liftIO . f $ fpToString fp
+
+-- from Real World Haskell
 getFileSize path = handle handler $
     bracket (openFile path ReadMode) (hClose) (\h -> do
         size <- hFileSize h
@@ -123,14 +159,17 @@ getFileSize path = handle handler $
     handler :: SomeException -> IO (Maybe Integer)
     handler _ = return Nothing
 
-lio f fp =
-    liftIO . f $ fpToString fp
-
 -- End of file.
 #+END_SRC
 
+------------------------------------------------------------------------------
+* usage
+
+In the present version, =cd= to the root of the canonical music collection and run the script.
+The output location is hardwired in the code
+
 #+BEGIN_EXAMPLE
-export MP3=~/.sync/.esync/java/org/openhc/make-mp3-copies
+export MP3=~/make-mp3-copies
 alias m3='$MP3/MakeMP3Copies'
 cd $MP3
 ghc MakeMP3Copies.hs

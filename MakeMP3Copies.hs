@@ -15,66 +15,70 @@ import           System.FilePath
 import           System.IO (IOMode(..), hClose, hFileSize, openFile)
 default (T.Text)
 
-startingPath = "."
-copyRoot = "/tmp/JUNK/"
+fromRoot = "."
+toRoot   = "/tmp/JUNK/"
 
 main = shelly $ verbosely $ do
-    processDir startingPath
+    processDir fromRoot
 
-processDir path = do
-    contents <- ls path
-    forM_ contents $ \fp -> do
-            isDir <- test_d fp
+processDir fromPath = do
+    contents <- ls fromPath
+    forM_ contents $ \from -> do
+            isDir <- test_d from
             if isDir
-                then do { maybeCreateDir fp; processDir fp}
-                else processFile fp $ takeExtension $ fpToString fp
+                then do { maybeCreateDir from; processDir from}
+                else processFile from $ takeExtension $ fpToString from
 
-maybeCreateDir fp = do
-    let cp = mkCpFilePath fp
-    dirExists <- test_d cp
+maybeCreateDir from = do
+    let to = mkToFilePath from
+    dirExists <- test_d to
     if dirExists
-        then                  say "DIR EXISTS"  cp
-        else do { mkdir_p cp; say "DIR CREATED" cp }
+        then                  say "DIR EXISTS"  to
+        else do { mkdir_p to; say "DIR CREATED" to }
 
-processFile fp ".flac" = maybeDo convert True  False fp
-processFile fp ".mp3"  = maybeDo copy    False True  fp
-processFile fp ".jpg"  = maybeDo copy    False True  fp
-processFile fp _       = say "IGNORED" fp
+processFile from ".flac" = maybeDo convert True  False from
+processFile from ".mp3"  = maybeDo copy    False True  from
+processFile from ".jpg"  = maybeDo copy    False True  from
+processFile from _       = say "IGNORED" from
 
-maybeDo f extP sizeP fp = do
-    let cp = mkCpFilePath $ if extP then (fromText (T.pack (replaceExtension (fpToString fp) ".mp3"))) else fp
-    fileExists <- test_f cp
+maybeDo f extP sizeP from = do
+    let to = mkToFilePath $ if extP then (fromText (T.pack (replaceExtension (fpToString from) ".mp3"))) else from
+    fileExists <- test_f to
     if fileExists
-        then doIf f sizeP fp cp
-        else      f       fp cp
+        then doIf f sizeP from to
+        else      f       from to
 
-doIf f sizeP fp cp = do
-    fpSize <- lio getFileSize         fp
-    fpTime <- lio getModificationTime fp
-    cpSize <- lio getFileSize         cp
-    cpTime <- lio getModificationTime cp
-    if fpTime > cpTime || (sizeP && (fromJust fpSize) /= (fromJust cpSize))
-        then f fp cp
-        else say "FILE EXISTS" cp
+doIf f sizeP from to = do
+    fromSize <- lio getFileSize         from
+    fromTime <- lio getModificationTime from
+    toSize   <- lio getFileSize         to
+    toTime   <- lio getModificationTime to
+    if fromTime > toTime || (sizeP && (fromJust fromSize) /= (fromJust toSize))
+        then f from to
+        else say "FILE EXISTS" to
 
-convert fp copy = do
-    flacToMp3 (toTextIgnore fp) (toTextIgnore copy)
-    say "FILE CONVERTED" copy
+convert from to = do
+    flacToMp3 (toTextIgnore from) (toTextIgnore to)
+    say "FILE CONVERTED" to
   where
     flacToMp3 from to = run_ "ffmpeg" ["-i", from, "-qscale:a", "0", to]
 
-copy fp copyFile = do
-    cp fp copyFile
-    say "FILE COPIED" copyFile
+copy from to = do
+    cp from to
+    say "FILE COPIED" to
 
-mkCpFilePath path =
-    (fpToString copyRoot) Shelly.</> (fpToString path)
+mkToFilePath path =
+    (fpToString toRoot) Shelly.</> (fpToString path)
 
 fpToString fp = T.unpack $ toTextIgnore fp
 
 say msg fp =
     liftIO $ putStrLn $ show (fpToString fp) ++ " " ++ msg
 
+lio f fp =
+    liftIO . f $ fpToString fp
+
+-- from Real World Haskell
 getFileSize path = handle handler $
     bracket (openFile path ReadMode) (hClose) (\h -> do
         size <- hFileSize h
@@ -82,8 +86,5 @@ getFileSize path = handle handler $
   where
     handler :: SomeException -> IO (Maybe Integer)
     handler _ = return Nothing
-
-lio f fp =
-    liftIO . f $ fpToString fp
 
 -- End of file.

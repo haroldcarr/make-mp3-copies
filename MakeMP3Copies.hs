@@ -1,6 +1,7 @@
 
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module MakeMP3Copies where
@@ -17,11 +18,8 @@ import           System.FilePath
 import           System.IO (IOMode(..), hClose, hFileSize, openFile)
 default (T.Text)
 
-fromRoot = "."
+-- TODO: get this from Main
 toRoot   = "/tmp/JUNK/"
-
-main = shelly $ verbosely $ do
-    processDir fromRoot
 
 processDir fromPath = do
     contents <- ls fromPath

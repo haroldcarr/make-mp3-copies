@@ -7,7 +7,7 @@
 #+INFOJS_OPT:  view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 
 # Created       : 2013 Sep 09 (Mon) 17:41:15 by carr.
-Last Modified : 2013 Nov 10 (Sun) 14:30:23 by carr.
+Last Modified : 2013 Nov 10 (Sun) 15:25:29 by carr.
 
 #+BEGIN_HTML
 ---
@@ -68,9 +68,16 @@ ffmpeg -i "/Volumes/my-music/Ahmad Jamal/The Awakening/01-The Awakening.flac" -q
 
 [[https://github.com/haroldcarr/make-mp3-copies]]
 
+A =Main.main=:
+
+#+INCLUDE: "Main.hs" src haskell -n
+
+Then the real code:
+
 #+BEGIN_SRC haskell -n
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module MakeMP3Copies where
@@ -87,11 +94,8 @@ import           System.FilePath
 import           System.IO (IOMode(..), hClose, hFileSize, openFile)
 default (T.Text)
 
-fromRoot = "."
+-- TODO: get this from Main
 toRoot   = "/tmp/JUNK/"
-
-main = shelly $ verbosely $ do
-    processDir fromRoot
 
 processDir fromPath = do
     contents <- ls fromPath

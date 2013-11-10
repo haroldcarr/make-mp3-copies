@@ -21,13 +21,9 @@ flag threaded
     default: False
     description: Do not know if it could run with build support for multithreaded execution
 
-library
-    build-depends:      shelly >= 1.3.0.7
-    exposed-modules:    MakeMP3Copies
-
 executable MakeMP3Copies
-    build-depends:      shelly
-    main-is:            MakeMP3Copies.hs
+    build-depends:      base, directory, filepath, shelly, text, transformers
+    main-is:            Main.hs
     ghc-options:
     if flag(threaded)
         ghc-options:    -threaded

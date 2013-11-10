@@ -3,6 +3,8 @@
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
+module MakeMP3Copies where
+
 import           Control.Applicative
 import           Control.Exception (bracket, handle, SomeException)
 import           Control.Monad

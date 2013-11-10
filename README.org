@@ -7,7 +7,7 @@
 #+INFOJS_OPT:  view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 
 # Created       : 2013 Sep 09 (Mon) 17:41:15 by carr.
-Last Modified : 2013 Sep 15 (Sun) 15:35:45 by carr.
+Last Modified : 2013 Nov 10 (Sun) 14:30:23 by carr.
 
 #+BEGIN_HTML
 ---
@@ -72,6 +72,8 @@ ffmpeg -i "/Volumes/my-music/Ahmad Jamal/The Awakening/01-The Awakening.flac" -q
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
+module MakeMP3Copies where
 
 import           Control.Applicative
 import           Control.Exception (bracket, handle, SomeException)

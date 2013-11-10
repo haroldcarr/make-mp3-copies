@@ -7,7 +7,7 @@
 #+INFOJS_OPT:  view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 
 # Created       : 2013 Sep 09 (Mon) 17:41:15 by carr.
-Last Modified : 2013 Sep 11 (Wed) 11:24:44 by carr.
+Last Modified : 2013 Sep 15 (Sun) 15:35:45 by carr.
 
 #+BEGIN_HTML
 ---
@@ -15,9 +15,6 @@ title: FLAC to MP3 via Haskell, Shelly and ffmpeg
 tags: haskell, shelly, flac, mp3, ffmpeg
 ---
 #+END_HTML
-
-------------------------------------------------------------------------------
-* overview
 
 I have a large digitized music collection, primarily encoded in
 lossless [[http://en.wikipedia.org/wiki/FLAC][FLAC]].  Great for listening at home.  But lossy [[http://en.wikipedia.org/wiki/MP3][MP3]] is best
@@ -59,6 +56,7 @@ sudo cabal install shelly shelly-extra
 - [[http://www.discogs.com/groups/topic/151711]]
 - [[http://www.ffmpeg.org/ffmpeg.html]]
 
+@@html:&nbsp;@@
 #+BEGIN_EXAMPLE
 sudo port search ffmpeg
 sudo port install ffmpeg @1.2.2
@@ -166,7 +164,7 @@ getFileSize path = handle handler $
 * usage
 
 In the present version, =cd= to the root of the canonical music collection and run the script.
-The output location is hardwired in the code
+The output location is hardwired in the code.
 
 #+BEGIN_EXAMPLE
 export MP3=~/make-mp3-copies

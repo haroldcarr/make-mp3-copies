@@ -12,9 +12,6 @@ synopsis:           Make MP3 copies of FLAC files.
 description:        Make MP3 copies of FLAC files.
 homepage:           https://github.com/haroldcarr/make-mp3-copies
 stability:          Beta
-data-dir:
-data-files:
-extra-source-files:
 
 source-repository head
     type:     git
@@ -25,16 +22,11 @@ flag threaded
     description: Do not know if it could run with build support for multithreaded execution
 
 library
-    build-depends:
-        shelly >= 1.3.0.7
-    hs-source-dirs:
-    exposed-modules:
-        MakeMP3Copies
-    other-modules:
+    build-depends:      shelly >= 1.3.0.7
+    exposed-modules:    MakeMP3Copies
 
 executable MakeMP3Copies
     build-depends:      shelly
-    hs-source-dirs:
     main-is:            MakeMP3Copies.hs
     ghc-options:
     if flag(threaded)

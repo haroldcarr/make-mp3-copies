@@ -61,7 +61,7 @@ convert from to = do
     flacToMp3 (toTextIgnore from) (toTextIgnore to)
     say "FILE CONVERTED" to
   where
-    flacToMp3 from to = run_ "ffmpeg" ["-i", from, "-qscale:a", "0", to]
+    flacToMp3 from to = run_ "ffmpeg" ["-i", from, "-qscale:a", "9", to]
 
 copy from to = do
     cp from to

@@ -7,7 +7,7 @@
 #+INFOJS_OPT:  view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 
 # Created       : 2013 Sep 09 (Mon) 17:41:15 by carr.
-Last Modified : 2014 Nov 02 (Sun) 17:57:19 by Harold Carr.
+Last Modified : 2014 Nov 02 (Sun) 18:07:03 by Harold Carr.
 
 #+BEGIN_HTML
 ---
@@ -177,7 +177,8 @@ In the present version, =cd= to the root of the canonical music collection and r
 The output location is hardwired in the code.
 
 #+BEGIN_EXAMPLE
-export MP3=~/.sync/.esync/openhc/make-mp3-copies
+# change next line to location of code
+export MP3=~/make-mp3-copies
 alias m3='$MP3/dist/build/MakeMP3Copies/MakeMP3Copies'
 cd $MP3
 cabal build

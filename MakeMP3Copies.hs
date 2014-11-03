@@ -1,6 +1,6 @@
 {-
 Created       : 2013 Sep 09 (Mon) 17:41:15 by carr.
-Last Modified : 2014 Nov 02 (Sun) 17:25:05 by Harold Carr.
+Last Modified : 2014 Nov 02 (Sun) 17:35:24 by Harold Carr.
 -}
 
 {-# LANGUAGE ExtendedDefaultRules      #-}
@@ -10,7 +10,7 @@ Last Modified : 2014 Nov 02 (Sun) 17:25:05 by Harold Carr.
 
 module MakeMP3Copies where
 
-import           Control.Exception      (SomeException, bracket, handle)
+import           Control.Exception      (SomeException, handle)
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Data.Maybe             (fromJust)
@@ -19,8 +19,7 @@ import qualified Data.Text              as T
 import           Shelly
 import           System.Directory
 import           System.FilePath
-import           System.IO              (IOMode (..), hClose, hFileSize,
-                                         openFile)
+import           System.IO              (IOMode (..), hFileSize, withFile)
 default (T.Text)
 
 -- TODO: get this from Main
@@ -53,7 +52,7 @@ processFile from _       = say "IGNORED" from
 maybeDo :: (Shelly.FilePath -> Shelly.FilePath -> Sh ())
             -> Bool -> Bool -> Shelly.FilePath -> Sh ()
 maybeDo f extP sizeP from = do
-    let to = mkToFilePath $ if extP then (fromText (T.pack (replaceExtension (fpToString from) ".mp3"))) else from
+    let to = mkToFilePath $ if extP then fromText (T.pack (replaceExtension (fpToString from) ".mp3")) else from
     fileExists <- test_f to
     if fileExists
         then doIf f sizeP from to
@@ -67,7 +66,7 @@ doIf f sizeP from to = do
     fromTime <- lio getModificationTime from
     toSize   <- lio getFileSize         to
     toTime   <- lio getModificationTime to
-    if fromTime > toTime || (sizeP && (fromJust fromSize) /= (fromJust toSize))
+    if fromTime > toTime || (sizeP && fromJust fromSize /= fromJust toSize)
         then f from to
         else say "FILE EXISTS" to
 
@@ -85,13 +84,13 @@ copy from to = do
 
 mkToFilePath :: Shelly.FilePath -> Shelly.FilePath
 mkToFilePath path0 =
-    (fpToString toRoot) Shelly.</> (fpToString path0)
+    fpToString toRoot Shelly.</> fpToString path0
 
 fpToString :: Shelly.FilePath -> String
 fpToString fp = T.unpack $ toTextIgnore fp
 
 say :: Control.Monad.IO.Class.MonadIO m =>
-       [Char] -> Shelly.FilePath -> m ()
+       String -> Shelly.FilePath -> m ()
 say msg fp =
     liftIO $ putStrLn $ show (fpToString fp) ++ " " ++ msg
 
@@ -103,7 +102,7 @@ lio f fp =
 -- from Real World Haskell
 getFileSize :: Prelude.FilePath -> IO (Maybe Integer)
 getFileSize path0 = handle handler $
-    bracket (openFile path0 ReadMode) (hClose) (\h -> do
+    withFile path0 ReadMode (\h -> do
         size <- hFileSize h
         return $ Just size)
   where

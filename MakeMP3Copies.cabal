@@ -24,6 +24,7 @@ flag threaded
 executable MakeMP3Copies
     build-depends:      base, directory, filepath, shelly, text, transformers
     main-is:            Main.hs
+    other-modules:      MakeMP3Copies
     ghc-options:
     if flag(threaded)
         ghc-options:    -threaded

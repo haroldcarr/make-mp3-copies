@@ -7,7 +7,7 @@
 #+INFOJS_OPT:  view:nil toc:t ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 
 # Created       : 2013 Sep 09 (Mon) 17:41:15 by carr.
-Last Modified : 2014 Nov 02 (Sun) 18:07:03 by Harold Carr.
+Last Modified : 2016 Dec 10 (Sat) 11:28:48 by Harold Carr.
 
 #+BEGIN_HTML
 ---
@@ -179,10 +179,7 @@ The output location is hardwired in the code.
 #+BEGIN_EXAMPLE
 # change next line to location of code
 export MP3=~/make-mp3-copies
-alias m3='$MP3/dist/build/MakeMP3Copies/MakeMP3Copies'
-cd $MP3
-cabal build
-export PATH=.:$PATH
+alias m3='$MP3/.stack-work/dist/x86_64-osx/Cabal-1.22.5.0/build/MakeMP3Copies/MakeMP3Copies'
 pushd "/Volumes/my-music/Ahmad Jamal/"
 m3
 #+END_EXAMPLE

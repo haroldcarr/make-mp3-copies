@@ -1,6 +1,6 @@
 {-
 Created       : 2013 Sep 09 (Mon) 17:41:15 by carr.
-Last Modified : 2014 Nov 02 (Sun) 17:35:24 by Harold Carr.
+Last Modified : 2017 Jul 26 (Wed) 17:41:37 by Harold Carr.
 -}
 
 {-# LANGUAGE ExtendedDefaultRules      #-}
@@ -13,7 +13,6 @@ module MakeMP3Copies where
 import           Control.Exception      (SomeException, handle)
 import           Control.Monad
 import           Control.Monad.IO.Class
-import           Data.Maybe             (fromJust)
 import           Data.String
 import qualified Data.Text              as T
 import           Shelly
@@ -66,7 +65,7 @@ doIf f sizeP from to = do
     fromTime <- lio getModificationTime from
     toSize   <- lio getFileSize         to
     toTime   <- lio getModificationTime to
-    if fromTime > toTime || (sizeP && fromJust fromSize /= fromJust toSize)
+    if fromTime > toTime || (sizeP && fromSize /= toSize)
         then f from to
         else say "FILE EXISTS" to
 
@@ -98,15 +97,5 @@ lio :: Control.Monad.IO.Class.MonadIO m =>
        (String -> IO a) -> Shelly.FilePath -> m a
 lio f fp =
     liftIO . f $ fpToString fp
-
--- from Real World Haskell
-getFileSize :: Prelude.FilePath -> IO (Maybe Integer)
-getFileSize path0 = handle handler $
-    withFile path0 ReadMode (\h -> do
-        size <- hFileSize h
-        return $ Just size)
-  where
-    handler :: SomeException -> IO (Maybe Integer)
-    handler _ = return Nothing
 
 -- End of file.
